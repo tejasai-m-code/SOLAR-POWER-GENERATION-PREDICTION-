@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-import joblib
 import numpy as np
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -33,9 +32,9 @@ class PredictionOutput(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     model = Booster(params={"nthread": 1}, model_file=ARTIFACT_DIR / "solar_generation_model.ubj")
-    features = joblib.load(ARTIFACT_DIR / "solar_feature_names.pkl")
-    if model.feature_names != features or set(features) != set(PredictionInput.model_fields):
-        raise RuntimeError("Saved model, feature list, and API schema must agree.")
+    features = model.feature_names
+    if not features or len(features) != len(PredictionInput.model_fields) or set(features) != set(PredictionInput.model_fields):
+        raise RuntimeError("Saved model feature names must match the API schema.")
     app.state.model = model
     app.state.features = features
     yield

@@ -1,6 +1,6 @@
 # Deploy SolaRizz on Vercel
 
-SolaRizz is a FastAPI prediction API. Vercel's FastAPI preset serves the ASGI application in `app/main.py` as a Python 3.12 function. Uvicorn is for local development. The function loads the trained XGBoost Booster from `phase1_artifacts/solar_generation_model.ubj` and validates its feature order against `phase1_artifacts/solar_feature_names.pkl` at startup.
+SolaRizz is a FastAPI prediction API. Vercel's FastAPI preset serves the ASGI application in `app/main.py` as a Python 3.12 function. Uvicorn is for local development. The function loads the trained XGBoost Booster from `phase1_artifacts/solar_generation_model.ubj` and checks its embedded feature names against the API schema at startup.
 
 ## Production settings
 
@@ -17,7 +17,7 @@ SolaRizz is a FastAPI prediction API. Vercel's FastAPI preset serves the ASGI ap
 
 Import the existing GitHub repository in the authorized Vercel scope, or use its existing Vercel project. If Vercel cannot list the repository, grant its GitHub App access to this repository. Let Vercel build the project and use its reported production domain. Future pushes to `main` redeploy when the Git integration is enabled.
 
-Function configuration includes both inference assets. The deployment excludes notebook, training CSV, and legacy model files. Local, notebook, and test dependencies are in `requirements-dev.txt`.
+Function configuration includes the portable model and its embedded feature order. The deployment excludes notebook, training CSV, and legacy model files. Local, notebook, and test dependencies are in `requirements-dev.txt`.
 
 ## Local verification
 
@@ -55,6 +55,6 @@ Open `http://127.0.0.1:8000/docs` after startup. The four entry points are `GET 
 
 ## Troubleshooting
 
-Use Vercel build logs to diagnose dependency installation or function size errors. If startup fails, check runtime logs for missing inference assets or incompatible Linux native libraries. If the deployment returns an authentication page, check deployment protection for this project's production domain before submitting it.
+Use Vercel build logs to diagnose dependency installation or function size errors. If startup fails, check runtime logs for missing portable model or incompatible Linux native libraries. If the deployment returns an authentication page, check deployment protection for this project's production domain before submitting it.
 
 The model estimates generation using same-hour weather observations. The generation timestamp convention and physical target unit remain unverified.

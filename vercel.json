@@ -3,7 +3,7 @@
   "framework": "fastapi",
   "functions": {
     "app/main.py": {
-      "includeFiles": "phase1_artifacts/{solar_generation_model.ubj,solar_feature_names.pkl}",
+      "includeFiles": "phase1_artifacts/solar_generation_model.ubj",
       "excludeFiles": "{**/*.csv,**/*.ipynb,solar_*.pkl,phase1_artifacts/solar_generation_model.pkl,tests/**,postman/**}"
     }
   }
