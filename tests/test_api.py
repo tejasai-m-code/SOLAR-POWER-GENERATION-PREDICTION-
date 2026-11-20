@@ -28,7 +28,7 @@ def sample():
 def test_root(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"name": "SOLRIZ Solar Generation API", "docs": "/docs"}
+    assert response.json() == {"name": "SolaRizz API", "docs": "/docs"}
 
 
 def test_health(client):

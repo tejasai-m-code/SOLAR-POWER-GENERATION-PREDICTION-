@@ -43,8 +43,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SOLRIZ Solar Generation API",
-    description="Estimates generation from same-hour weather observations and calendar features.",
+    title="SolaRizz API",
+    description="Solar Power Generation Prediction and Performance Deviation Analysis",
     lifespan=lifespan,
 )
 
