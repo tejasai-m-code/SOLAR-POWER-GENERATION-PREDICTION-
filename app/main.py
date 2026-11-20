@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+from xgboost import XGBRegressor
 
 ARTIFACT_DIR = Path(__file__).resolve().parents[1] / "phase1_artifacts"
 FLOAT32_MAX = 3.4028234663852886e38
@@ -31,7 +32,8 @@ class PredictionOutput(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    model = joblib.load(ARTIFACT_DIR / "solar_generation_model.pkl")
+    model = XGBRegressor()
+    model.load_model(ARTIFACT_DIR / "solar_generation_model.ubj")
     features = joblib.load(ARTIFACT_DIR / "solar_feature_names.pkl")
     if list(model.feature_names_in_) != features or set(features) != set(PredictionInput.model_fields):
         raise RuntimeError("Saved model, feature list, and API schema must agree.")
