@@ -1,31 +1,60 @@
-# Verify and share the SolaRizz API
+# Deploy SolaRizz on Vercel
 
-## Start FastAPI on Windows
+SolaRizz is a FastAPI prediction API. Vercel's FastAPI preset serves the ASGI application in `app/main.py` as a Python 3.12 function. Uvicorn is for local development. The function loads the trained XGBoost Booster from `phase1_artifacts/solar_generation_model.ubj` and validates its feature order against `phase1_artifacts/solar_feature_names.pkl` at startup.
 
-Open PowerShell in the cloned repository. Update the checkout and use the existing virtual environment. If you created the environment under Local AppData, use the alternate Python path shown below.
+## Production settings
+
+| Setting | Value |
+|---|---|
+| Git repository | `tejasai-m-code/SOLAR-POWER-GENERATION-PREDICTION-` |
+| Production branch | `main` |
+| Framework preset | FastAPI |
+| Root directory | Repository root |
+| Python version | 3.12 via `.python-version` |
+| Install and build commands | Vercel FastAPI defaults |
+| Production dependencies | `requirements.txt` |
+| Application environment variables | None required |
+
+Import the existing GitHub repository in the authorized Vercel scope, or use its existing Vercel project. If Vercel cannot list the repository, grant its GitHub App access to this repository. Let Vercel build the project and use its reported production domain. Future pushes to `main` redeploy when the Git integration is enabled.
+
+Function configuration includes both inference assets. The deployment excludes notebook, training CSV, and legacy model files. Local, notebook, and test dependencies are in `requirements-dev.txt`.
+
+## Local verification
+
+From the repository root in PowerShell, using Python 3.12:
 
 ```powershell
-git pull --ff-only origin main
-$python = '.\.venv\Scripts\python.exe'
-# Alternate path for the venv outside OneDrive
-# $python = Join-Path $env:LOCALAPPDATA 'SOLRIZ\venv\Scripts\python.exe'
-& $python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-After startup completes, visit `http://127.0.0.1:8000/docs`. Keep this window open.
+Open `http://127.0.0.1:8000/docs` after startup. The four entry points are `GET /`, `GET /health`, `GET /docs`, and `POST /predict`.
 
-## Open an HTTPS tunnel with ngrok
+## Public verification and Postman
 
-1. Sign in or create an ngrok account. Follow the Windows installation instructions in the [ngrok dashboard](https://dashboard.ngrok.com/get-started/setup/windows). With Windows Package Manager, use `winget install --id Ngrok.Ngrok --exact`.
-2. Open a second PowerShell window. Copy the authtoken command from the ngrok dashboard and run it on your computer. The command has the form `ngrok config add-authtoken <YOUR_AUTHTOKEN>`. Keep the token out of chat and Git.
-3. Run `ngrok http 8000`. Copy the **HTTPS** forwarding URL. Keep both PowerShell windows open.
-4. Open the public URL with `/docs` appended in a signed-out browser. If ngrok displays its browser interstitial, continue to the site. The Postman collection sends the ngrok interstitial bypass header.
+1. Open the production URL and its `/health` and `/docs` routes from a signed-out browser. Check that Swagger can reach the public API.
+2. In Swagger, use the following notebook sample for `POST /predict`. The eight keys are listed in training order.
 
-An ngrok tunnel forwards traffic to your running laptop. The URL stops serving the API if FastAPI, ngrok, or the internet connection stops, or if the laptop sleeps or shuts down. Persistent hosting is required if the college needs access with the laptop off.
+   ```json
+   {
+     "ALLSKY_SFC_SW_DWN": 0.0,
+     "T2M": 27.7,
+     "T2MDEW": 19.38,
+     "RH2M": 60.49,
+     "WS10M": 1.93,
+     "Hour": 20,
+     "Month": 4,
+     "DayOfYear": 94
+   }
+   ```
 
-## Run the Postman collection
+   Expect HTTP 200 with a numeric `predicted_generation` near `178.7476348876953`. Omit a required field or provide an invalid type to check HTTP 422.
+3. Import [the Postman collection](postman/solarizz.postman_collection.json). Set `base_url` to the public HTTPS origin without a trailing slash, and run the collection. Confirm seven requests and 14 assertions pass. The public Swagger URL is the college evaluation link once verified.
 
-1. In Postman, click **Import** and select [postman/solarizz.postman_collection.json](postman/solarizz.postman_collection.json).
-2. To test locally, leave the collection variable `base_url` at `http://127.0.0.1:8000`. To test publicly, set it to the HTTPS ngrok forwarding address without a trailing slash.
-3. Select **Run collection**, then **Run SolaRizz API Verification**. All seven requests and 14 assertions should pass. The notebook sample should return `178.7476348876953` within a tolerance of `0.000001`. The prediction unit is unverified.
-4. Save a screenshot of the public run for submission. Confirm the public `/docs` page on a different connection if available, and submit the working HTTPS base URL.
+## Troubleshooting
+
+Use Vercel build logs to diagnose dependency installation or function size errors. If startup fails, check runtime logs for missing inference assets or incompatible Linux native libraries. If the deployment returns an authentication page, check deployment protection for this project's production domain before submitting it.
+
+The model estimates generation using same-hour weather observations. The generation timestamp convention and physical target unit remain unverified.

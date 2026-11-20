@@ -2,12 +2,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import joblib
-import pandas as pd
+import numpy as np
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
-from xgboost import XGBRegressor
+from xgboost import Booster, DMatrix
 
 ARTIFACT_DIR = Path(__file__).resolve().parents[1] / "phase1_artifacts"
 FLOAT32_MAX = 3.4028234663852886e38
@@ -32,10 +32,9 @@ class PredictionOutput(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    model = XGBRegressor()
-    model.load_model(ARTIFACT_DIR / "solar_generation_model.ubj")
+    model = Booster(params={"nthread": 1}, model_file=ARTIFACT_DIR / "solar_generation_model.ubj")
     features = joblib.load(ARTIFACT_DIR / "solar_feature_names.pkl")
-    if list(model.feature_names_in_) != features or set(features) != set(PredictionInput.model_fields):
+    if model.feature_names != features or set(features) != set(PredictionInput.model_fields):
         raise RuntimeError("Saved model, feature list, and API schema must agree.")
     app.state.model = model
     app.state.features = features
@@ -72,6 +71,8 @@ def health():
 @app.post("/predict", response_model=PredictionOutput)
 def predict(payload: PredictionInput, request: Request):
     features = request.app.state.features
-    row = pd.DataFrame([payload.model_dump()], columns=features)
-    prediction = request.app.state.model.predict(row)[0]
+    values = payload.model_dump()
+    row = np.array([[values[feature] for feature in features]], dtype=np.float32)
+    data = DMatrix(row, feature_names=features, nthread=1)
+    prediction = request.app.state.model.predict(data)[0]
     return PredictionOutput(predicted_generation=float(prediction))

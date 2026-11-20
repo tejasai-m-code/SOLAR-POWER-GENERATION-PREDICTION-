@@ -1,0 +1,12 @@
+*.csv
+*.ipynb
+.ipynb_checkpoints/
+kaggle/
+solar_*.pkl
+phase1_artifacts/solar_generation_model.pkl
+postman/
+tests/
+.venv/
+.venv-*/
+.pytest_cache/
+**/__pycache__/
