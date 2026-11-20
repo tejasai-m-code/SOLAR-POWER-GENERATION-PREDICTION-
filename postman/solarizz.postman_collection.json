@@ -1,0 +1,270 @@
+{
+  "info": {
+    "name": "SolaRizz API Verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Root",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": "{{base_url}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(pm.response.json()).to.include({name: \"SolaRizz API\", docs: \"/docs\"});",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": "{{base_url}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(pm.response.json().status).to.equal(\"ok\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Swagger",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          }
+        ],
+        "url": "{{base_url}}/docs"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Swagger UI\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Valid prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/predict",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ALLSKY_SFC_SW_DWN\": 0.0,\n  \"T2M\": 27.7,\n  \"T2MDEW\": 19.38,\n  \"RH2M\": 60.49,\n  \"WS10M\": 1.93,\n  \"Hour\": 20,\n  \"Month\": 4,\n  \"DayOfYear\": 94\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(Number.isFinite(pm.response.json().predicted_generation)).to.equal(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Missing required field",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/predict",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ALLSKY_SFC_SW_DWN\": 0.0,\n  \"T2MDEW\": 19.38,\n  \"RH2M\": 60.49,\n  \"WS10M\": 1.93,\n  \"Hour\": 20,\n  \"Month\": 4,\n  \"DayOfYear\": 94\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 422\", function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(pm.response.json().detail[0].loc).to.eql([\"body\", \"T2M\"]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid input type",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/predict",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ALLSKY_SFC_SW_DWN\": 0.0,\n  \"T2M\": \"27.7\",\n  \"T2MDEW\": 19.38,\n  \"RH2M\": 60.49,\n  \"WS10M\": 1.93,\n  \"Hour\": 20,\n  \"Month\": 4,\n  \"DayOfYear\": 94\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 422\", function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(pm.response.json().detail[0].loc).to.eql([\"body\", \"T2M\"]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notebook sample parity",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "ngrok-skip-browser-warning",
+            "value": "true"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/predict",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ALLSKY_SFC_SW_DWN\": 0.0,\n  \"T2M\": 27.7,\n  \"T2MDEW\": 19.38,\n  \"RH2M\": 60.49,\n  \"WS10M\": 1.93,\n  \"Hour\": 20,\n  \"Month\": 4,\n  \"DayOfYear\": 94\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Expected response\", function () {",
+              "    pm.expect(pm.response.json().predicted_generation).to.be.closeTo(178.7476348876953, 0.000001);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
